@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Code2 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -9,7 +9,10 @@ export const Footer: React.FC = () => {
   return (
     <footer className="w-full border-t border-slate-200 bg-white/60 py-10 transition-colors dark:border-neutral-800/80 dark:bg-[#0a0b0d]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-5 h-5 rounded-md bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-100 flex items-center justify-center shadow-sm border border-neutral-800 dark:border-neutral-700/80">
+            <Code2 className="w-3 h-3 text-sky-400" />
+          </div>
           <span className="font-semibold text-neutral-800 dark:text-neutral-300">
             Bipin
           </span>

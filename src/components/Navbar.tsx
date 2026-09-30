@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, Sun, Moon, Search, Image as ImageIcon } from 'lucide-react';
+import { Github, Sun, Moon, Search, Image as ImageIcon, Code2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 interface NavbarProps {
@@ -25,8 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => onNavigate('home')}
           className="flex items-center gap-2.5 text-left group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 rounded-sm"
         >
-          <div className="w-5 h-5 rounded-md bg-neutral-900 text-white dark:bg-white dark:text-black flex items-center justify-center font-mono font-bold text-xs shadow-sm">
-            B
+          <div className="w-6 h-6 rounded-md bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-100 flex items-center justify-center shadow-sm border border-neutral-800 dark:border-neutral-700/80">
+            <Code2 className="w-3.5 h-3.5 text-sky-400" />
           </div>
           <span className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-500 dark:group-hover:text-neutral-400 transition-colors">
             Bipin
