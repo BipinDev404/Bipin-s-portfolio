@@ -1,0 +1,6 @@
+{
+  "name": "Bipin — Project Archive & Software Showcase",
+  "description": "A curated archive of web applications, browser experiments, tools, and games built by Bipin. Project-first developer portfolio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,326 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Subtle dot/grid background texture */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+.dark .bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* Minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================================================
+   Comprehensive GitHub-Flavored Markdown (GFM) Readme Styling
+   ========================================================================== */
+.readme-content {
+  color: #334155;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  word-wrap: break-word;
+}
+
+.dark .readme-content {
+  color: #cbd5e1;
+}
+
+/* Headings */
+.readme-content h1,
+.readme-content h2,
+.readme-content h3,
+.readme-content h4,
+.readme-content h5,
+.readme-content h6 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.readme-content h1 {
+  font-size: 1.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+.dark .readme-content h1 {
+  border-bottom-color: #27272a;
+  color: #ffffff;
+}
+
+.readme-content h2 {
+  font-size: 1.375rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+.dark .readme-content h2 {
+  border-bottom-color: #27272a;
+  color: #f4f4f5;
+}
+
+.readme-content h3 {
+  font-size: 1.15rem;
+  color: #1e293b;
+}
+.dark .readme-content h3 {
+  color: #f4f4f5;
+}
+
+.readme-content h4 {
+  font-size: 1rem;
+  color: #334155;
+}
+.dark .readme-content h4 {
+  color: #e4e4e7;
+}
+
+/* Paragraphs */
+.readme-content p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Links */
+.readme-content a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+.dark .readme-content a {
+  color: #60a5fa;
+}
+.readme-content a:hover {
+  color: #1d4ed8;
+}
+.dark .readme-content a:hover {
+  color: #93c5fd;
+}
+
+/* Lists */
+.readme-content ul,
+.readme-content ol {
+  padding-left: 1.75rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.readme-content ul {
+  list-style-type: disc;
+}
+
+.readme-content ol {
+  list-style-type: decimal;
+}
+
+.readme-content li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.readme-content li > p {
+  margin-bottom: 0.25rem;
+}
+
+/* Task lists */
+.readme-content ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.5rem;
+}
+.readme-content .task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.readme-content .task-list-item input[type="checkbox"] {
+  margin-top: 0.35rem;
+  cursor: default;
+}
+
+/* Inline code */
+.readme-content code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.375rem;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+.dark .readme-content code:not(pre code) {
+  background-color: #18181b;
+  border-color: #27272a;
+  color: #e4e4e7;
+}
+
+/* Code Blocks */
+.readme-content pre {
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background-color: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #1e293b;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.dark .readme-content pre {
+  background-color: #090a0c;
+  border-color: #27272a;
+  color: #f4f4f5;
+}
+.readme-content pre code {
+  font-family: var(--font-mono);
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+}
+
+/* Blockquotes */
+.readme-content blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #3b82f6;
+  background-color: #f8fafc;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #475569;
+}
+.dark .readme-content blockquote {
+  border-left-color: #3b82f6;
+  background-color: #121417;
+  color: #94a3b8;
+}
+
+/* Tables */
+.readme-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+}
+.readme-content th,
+.readme-content td {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+.dark .readme-content th,
+.dark .readme-content td {
+  border-color: #27272a;
+}
+.readme-content th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #0f172a;
+}
+.dark .readme-content th {
+  background-color: #18181b;
+  color: #f4f4f5;
+}
+.readme-content tr:nth-child(even) td {
+  background-color: #fafbfc;
+}
+.dark .readme-content tr:nth-child(even) td {
+  background-color: #121417;
+}
+
+/* Images & Badges */
+.readme-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.625rem;
+  display: inline-block;
+  margin: 0.5rem 0;
+}
+.readme-content img:not([src*="badge"]):not([src*="shields.io"]) {
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.dark .readme-content img:not([src*="badge"]):not([src*="shields.io"]) {
+  border-color: #27272a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Horizontal rule */
+.readme-content hr {
+  height: 1px;
+  border: none;
+  background-color: #e2e8f0;
+  margin: 1.75rem 0;
+}
+.dark .readme-content hr {
+  background-color: #27272a;
+}
+
+/* Keyboard keys */
+.readme-content kbd {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  box-shadow: 0 1px 0 #cbd5e1;
+  color: #1e293b;
+}
+.dark .readme-content kbd {
+  border-color: #3f3f46;
+  background-color: #18181b;
+  box-shadow: 0 1px 0 #3f3f46;
+  color: #e4e4e7;
+}
