@@ -1,5 +1,5 @@
 import { Project } from '../types/project';
-import { GITHUB_USERNAME } from '../services/github';
+import { GITHUB_USERNAME } from '../constants';
 
 export const STATUS_CONFIG: Record<string, { label: string; dotClass: string; textClass: string }> = {
   'Live': {

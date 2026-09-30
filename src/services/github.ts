@@ -1,9 +1,12 @@
 import { Project, ProjectCategory, ProjectStatus, GitHubRateLimitInfo } from '../types/project';
+import { Article } from '../types/article';
+import { STARTER_ARTICLES } from '../data/articles';
+import { GITHUB_USERNAME, PORTFOLIO_TOPIC, BLOG_TOPICS } from '../constants';
 
-export const GITHUB_USERNAME = 'BipinDev404';
-export const PORTFOLIO_TOPIC = 'portfolio';
+export { GITHUB_USERNAME, PORTFOLIO_TOPIC, BLOG_TOPICS };
 
 const CACHE_KEY = `github_portfolio_${GITHUB_USERNAME}_v3`;
+const ARTICLES_CACHE_KEY = `github_articles_${GITHUB_USERNAME}_v1`;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
 
 interface GitHubRawRepo {
@@ -138,6 +141,38 @@ export function transformGitHubRepo(repo: GitHubRawRepo): Project {
     license: repo.license?.name || repo.license?.spdx_id || null,
     size: repo.size,
     owner: repo.owner.login,
+    isGitHubSource: true
+  };
+}
+
+// Transform raw GitHub repository into our Article model
+export function transformGitHubArticle(repo: GitHubRawRepo): Article {
+  const topics = repo.topics || [];
+  const name = formatProjectName(repo.name);
+  const cleanTags = topics
+    .filter(t => !['blog', 'article', 'writing', 'post', 'portfolio'].includes(t.toLowerCase()))
+    .map(t => t.charAt(0).toUpperCase() + t.slice(1));
+  
+  if (cleanTags.length === 0 && repo.language) {
+    cleanTags.push(repo.language);
+  }
+
+  const isFeatured = topics.map(t => t.toLowerCase()).includes('featured');
+
+  return {
+    id: repo.name,
+    slug: repo.name.toLowerCase(),
+    title: name,
+    repoName: repo.name,
+    description: repo.description || `Technical thoughts, design insights, and engineering notes by ${GITHUB_USERNAME}.`,
+    publishedAt: repo.created_at,
+    updatedAt: repo.pushed_at || repo.updated_at,
+    readingTime: '4 min read',
+    tags: cleanTags.length > 0 ? cleanTags : ['Engineering', 'Tech'],
+    githubUrl: repo.html_url,
+    stars: repo.stargazers_count,
+    featured: isFeatured,
+    defaultBranch: repo.default_branch || 'main',
     isGitHubSource: true
   };
 }
@@ -434,6 +469,93 @@ export async function getPortfolioRepositories(forceRefresh: boolean = false): P
       lastUpdated: new Date().toLocaleTimeString(),
       totalPublicRepos: FALLBACK_PROJECTS.length,
       portfolioTaggedRepos: FALLBACK_PROJECTS.length,
+      error: err.message,
+      usingFallback: true
+    };
+  }
+}
+
+/**
+ * Fetch technical articles / blog posts from GitHub
+ * Finds repositories tagged with topics: 'blog', 'article', 'writing', 'post', 'notes', etc.
+ */
+export async function getBlogArticles(forceRefresh = false): Promise<{
+  articles: Article[];
+  fromCache: boolean;
+  lastUpdated: string;
+  error?: string;
+  usingFallback?: boolean;
+}> {
+  if (!forceRefresh) {
+    try {
+      const cached = localStorage.getItem(ARTICLES_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const age = Date.now() - parsed.timestamp;
+        if (age < CACHE_TTL_MS && Array.isArray(parsed.articles)) {
+          return {
+            articles: parsed.articles,
+            fromCache: true,
+            lastUpdated: new Date(parsed.timestamp).toLocaleTimeString(),
+            usingFallback: parsed.usingFallback
+          };
+        }
+      }
+    } catch {}
+  }
+
+  try {
+    const url = `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=pushed&direction=desc`;
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/vnd.github.mercy-preview+json, application/vnd.github.v3+json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub API returned status ${response.status}`);
+    }
+
+    const repos: GitHubRawRepo[] = await response.json();
+
+    // Filter repositories tagged with blog/article topics
+    const articleRepos = repos.filter(repo => {
+      if (!repo.topics || !Array.isArray(repo.topics)) return false;
+      return repo.topics.some(t => BLOG_TOPICS.includes(t.toLowerCase()));
+    });
+
+    let finalArticles: Article[] = [];
+    let usingFallback = false;
+
+    if (articleRepos.length > 0) {
+      finalArticles = articleRepos.map(transformGitHubArticle);
+    } else {
+      // If user hasn't tagged any repositories with 'blog' yet, use starter articles
+      finalArticles = STARTER_ARTICLES;
+      usingFallback = true;
+    }
+
+    // Save to cache
+    try {
+      localStorage.setItem(ARTICLES_CACHE_KEY, JSON.stringify({
+        timestamp: Date.now(),
+        articles: finalArticles,
+        usingFallback
+      }));
+    } catch {}
+
+    return {
+      articles: finalArticles,
+      fromCache: false,
+      lastUpdated: new Date().toLocaleTimeString(),
+      usingFallback
+    };
+  } catch (err: any) {
+    console.warn('GitHub Articles API fetch failed, falling back to starters:', err);
+    return {
+      articles: STARTER_ARTICLES,
+      fromCache: false,
+      lastUpdated: new Date().toLocaleTimeString(),
       error: err.message,
       usingFallback: true
     };

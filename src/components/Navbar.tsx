@@ -1,19 +1,18 @@
 import React from 'react';
-import { Github, Sun, Moon, Search, Image as ImageIcon, Code2 } from 'lucide-react';
+import { Github, Sun, Moon, Search, Code2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { GITHUB_PROFILE_URL } from '../constants';
 
 interface NavbarProps {
   activeSection: string;
   onNavigate: (section: string) => void;
   onOpenSearch: () => void;
-  onOpenImageGuide?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeSection,
   onNavigate,
   onOpenSearch,
-  onOpenImageGuide,
 }) => {
   const { theme, toggleTheme } = useTheme();
 
@@ -66,6 +65,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
           <button
+            onClick={() => onNavigate('posts')}
+            className={`transition-colors relative py-1 ${
+              activeSection === 'posts' || activeSection === 'writing'
+                ? 'text-neutral-900 dark:text-white font-semibold'
+                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            Posts
+            {(activeSection === 'posts' || activeSection === 'writing') && (
+              <span className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-neutral-900 dark:bg-white rounded-full" />
+            )}
+          </button>
+          <button
             onClick={() => onNavigate('about')}
             className={`transition-colors relative py-1 ${
               activeSection === 'about'
@@ -93,29 +105,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: Actions (Search Icon, Image Guide, Theme Toggle, GitHub Icon) */}
+        {/* Zone 3: Actions (Search Icon, Theme Toggle, GitHub Icon) */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* ONLY Search Icon button (no text / input) */}
+          {/* Search Icon button */}
           <button
             onClick={onOpenSearch}
-            aria-label="Search projects"
-            title="Search projects (⌘K)"
+            aria-label="Search projects and posts"
+            title="Search (⌘K)"
             className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/80 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
           >
             <Search className="w-4 h-4" />
           </button>
-
-          {/* Screenshot Guide Button */}
-          {onOpenImageGuide && (
-            <button
-              onClick={onOpenImageGuide}
-              aria-label="How to add project screenshots in GitHub"
-              title="How to add real images via GitHub"
-              className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/80 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
-            >
-              <ImageIcon className="w-4 h-4" />
-            </button>
-          )}
 
           {/* Theme Toggle Button */}
           <button
@@ -133,7 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* GitHub Profile Link */}
           <a
-            href="https://github.com/BipinDev404"
+            href={GITHUB_PROFILE_URL}
             target="_blank"
             rel="noreferrer"
             aria-label="GitHub Profile"

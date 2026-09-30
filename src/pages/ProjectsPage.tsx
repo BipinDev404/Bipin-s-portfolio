@@ -4,8 +4,8 @@ import { ProjectFilters, FilterCategory } from '../components/ProjectFilters';
 import { ProjectCard } from '../components/ProjectCard';
 import { ProjectListView } from '../components/ProjectListView';
 import { ProjectSkeleton } from '../components/ProjectSkeleton';
-import { Layers, RefreshCw, Github, AlertTriangle } from 'lucide-react';
-import { GITHUB_USERNAME } from '../services/github';
+import { Layers, RefreshCw, AlertTriangle } from 'lucide-react';
+import { GITHUB_USERNAME } from '../constants';
 
 interface ProjectsPageProps {
   projects: Project[];
@@ -24,7 +24,6 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
   onRefresh,
   lastUpdated,
   error,
-  usingFallback,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -102,45 +101,46 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({
       <div className="mb-6 space-y-2 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400">
-            <Layers className="w-3.5 h-3.5" />
-            <span>GitHub Sync</span>
+            <Layers className="w-3.5 h-3.5 text-sky-500" />
+            <span>SOFTWARE ARCHIVE</span>
             <span>·</span>
             <span>@{GITHUB_USERNAME}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white mt-1">
             Projects Archive
           </h1>
-          <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mt-1">
-            All public projects tagged with <code className="font-mono bg-slate-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 px-1.5 py-0.5 rounded text-xs">portfolio</code> on GitHub.
+          <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mt-1 leading-relaxed">
+            A curated collection of web applications, tools, and open-source software built by Bipin.
           </p>
         </div>
 
-        {/* Sync Controls */}
+        {/* Refresh Controls */}
         <div className="flex items-center gap-3 shrink-0 text-xs font-mono">
           {lastUpdated && (
             <span className="text-neutral-400 hidden sm:inline">
-              Updated {lastUpdated}
+              Synced {lastUpdated}
             </span>
           )}
           <button
             onClick={onRefresh}
             disabled={loading}
             className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-neutral-800 dark:border-neutral-800 dark:bg-[#121417] dark:text-neutral-200 dark:hover:bg-neutral-800 flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Refresh projects feed"
           >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sync GitHub</span>
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin text-sky-500' : ''}`} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Optional Warning/Notice Banner if API is limited or using fallback */}
+      {/* Optional Warning/Notice Banner if API is limited */}
       {error && (
         <div className="mb-6 p-3.5 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
-            <div className="font-semibold">GitHub API Notice: {error}</div>
+            <div className="font-semibold">Notice: {error}</div>
             <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-              Displaying cached projects. Hit "Sync GitHub" to re-check the API.
+              Serving cached catalog. Click "Refresh" to re-check the live feed.
             </div>
           </div>
         </div>
