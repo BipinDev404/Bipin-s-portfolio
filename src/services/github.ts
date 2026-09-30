@@ -617,6 +617,47 @@ export async function getRepositoryLanguages(repoName: string): Promise<Record<s
 }
 
 /**
+ * Detect whether a URL is a badge/shield/status icon rather than a real content image
+ */
+export function isBadgeOrShield(url: string): boolean {
+  const lower = url.toLowerCase();
+  const badgeDomains = [
+    'shields.io',
+    'badge.fury.io',
+    'badgen.net',
+    'travis-ci.org',
+    'travis-ci.com',
+    'circleci.com',
+    'codecov.io',
+    'coveralls.io',
+    'sonarcloud.io',
+    'github.com/actions/workflows',
+    'github.com/workflow',
+    'workflows/build',
+    'workflows/ci',
+    'img.shields.io',
+    'badge.svg',
+    'badge.png',
+    'licence.svg',
+    'license.svg',
+    'version.svg',
+    'stars.svg',
+    'forks.svg',
+    'npm/v/',
+    'pypi/v/',
+    'crates.io/v/',
+    'github/v/release',
+    'github/license',
+    'visitor-badge',
+    'komarev.com/ghpvc',
+    'hits.dwyl.com',
+    'github-readme-stats',
+    'streak-stats'
+  ];
+  return badgeDomains.some(b => lower.includes(b));
+}
+
+/**
  * Resolve relative image URLs in markdown so they point directly to GitHub raw assets
  */
 export function resolveRelativeMarkdownImages(markdown: string, repoName: string, defaultBranch: string = 'main'): string {
@@ -626,7 +667,8 @@ export function resolveRelativeMarkdownImages(markdown: string, repoName: string
   let resolved = markdown.replace(
     /!\[(.*?)\]\((?!https?:\/\/)(.*?)\)/g,
     (match, alt, relativePath) => {
-      const cleanPath = relativePath.replace(/^\.?\//, '');
+      // Split any title part like `path/to/img.png "Title"`
+      const cleanPath = relativePath.trim().split(/\s+/)[0].replace(/^["']|["']$/g, '').replace(/^\.?\//, '');
       return `![${alt}](${baseUrl}/${cleanPath})`;
     }
   );
@@ -635,7 +677,7 @@ export function resolveRelativeMarkdownImages(markdown: string, repoName: string
   resolved = resolved.replace(
     /<img\s+([^>]*?)src=["'](?!https?:\/\/)(.*?)["']([^>]*?)>/gi,
     (match, before, relativePath, after) => {
-      const cleanPath = relativePath.replace(/^\.?\//, '');
+      const cleanPath = relativePath.trim().replace(/^["']|["']$/g, '').replace(/^\.?\//, '');
       return `<img ${before}src="${baseUrl}/${cleanPath}"${after}>`;
     }
   );
@@ -644,57 +686,121 @@ export function resolveRelativeMarkdownImages(markdown: string, repoName: string
 }
 
 /**
- * Extract screenshot image URLs from README markdown
+ * Extract ALL valid content image URLs from README markdown in document order.
+ * Handles both markdown image syntax `![alt](url)` and HTML `<img src="url">`.
+ * Automatically converts relative paths and GitHub blob links to raw GitHub URLs.
+ * Filters out CI badges and status shields.
  */
 export function extractScreenshotsFromReadme(markdown: string, repoName: string, defaultBranch: string = 'main'): string[] {
-  const screenshots: string[] = [];
+  if (!markdown || typeof markdown !== 'string') return [];
+
+  const images: string[] = [];
   const baseUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${repoName}/${defaultBranch}`;
 
-  // Markdown image syntax regex
-  const mdImgRegex = /!\[(.*?)\]\((.*?)\)/g;
-  let match;
-  while ((match = mdImgRegex.exec(markdown)) !== null) {
-    const src = match[2].trim();
-    if (src.startsWith('http://') || src.startsWith('https://')) {
-      screenshots.push(src);
+  const resolveUrl = (rawSrc: string): string | null => {
+    if (!rawSrc) return null;
+    let clean = rawSrc.trim().replace(/^["']|["']$/g, '');
+
+    // Skip empty, hash anchors, or data URIs
+    if (!clean || clean.startsWith('#') || clean.startsWith('data:')) return null;
+
+    let finalUrl = '';
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      // If it's a github.com/user/repo/blob/... link, transform to raw.githubusercontent.com
+      if (clean.includes('github.com/') && clean.includes('/blob/')) {
+        finalUrl = clean.replace('github.com/', 'raw.githubusercontent.com/').replace('/blob/', '/');
+      } else {
+        finalUrl = clean;
+      }
     } else {
-      const cleanPath = src.replace(/^\.?\//, '');
-      screenshots.push(`${baseUrl}/${cleanPath}`);
+      const cleanPath = clean.replace(/^\.?\//, '');
+      finalUrl = `${baseUrl}/${cleanPath}`;
+    }
+
+    if (isBadgeOrShield(finalUrl)) {
+      return null;
+    }
+
+    return finalUrl;
+  };
+
+  // Match both Markdown images ![alt](url) and HTML <img ... src="..." ...>
+  const combinedRegex = /!\[(.*?)\]\((.*?)\)|<img\s+[^>]*?src=["'](.*?)["'][^>]*?>/gi;
+  let match;
+  while ((match = combinedRegex.exec(markdown)) !== null) {
+    const rawSrc = match[2] || match[3];
+    if (rawSrc) {
+      const srcOnly = rawSrc.trim().split(/\s+/)[0].replace(/^["']|["']$/g, '');
+      const resolved = resolveUrl(srcOnly);
+      if (resolved && !images.includes(resolved)) {
+        images.push(resolved);
+      }
     }
   }
 
-  return screenshots;
+  return images;
 }
 
 /**
- * Return prioritized candidate URLs for real repository images hosted on GitHub
+ * Extract the FIRST image from README markdown to use as the project's cover picture
  */
-export function getProjectImageCandidates(project: Project): string[] {
+export function extractFirstImageFromReadme(markdown: string, repoName: string, defaultBranch: string = 'main'): string | null {
+  const images = extractScreenshotsFromReadme(markdown, repoName, defaultBranch);
+  return images.length > 0 ? images[0] : null;
+}
+
+/**
+ * Return prioritized candidate URLs for real repository images hosted on GitHub.
+ * The FIRST image from the repository's README.md is always prioritized highest!
+ */
+export function getProjectImageCandidates(project: Project, readmeFirstImage?: string | null): string[] {
   const repo = project.repoName || project.id;
   const branch = project.defaultBranch || 'main';
   const base = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${repo}/${branch}`;
 
   const candidates: string[] = [];
 
-  // If project has explicit screenshot from README or metadata, prioritize it
-  if (project.image && (project.image.startsWith('http://') || project.image.startsWith('https://'))) {
-    candidates.push(project.image);
+  // #1 PRIORITY: First picture link extracted directly from README.md file
+  if (readmeFirstImage && (readmeFirstImage.startsWith('http://') || readmeFirstImage.startsWith('https://'))) {
+    candidates.push(readmeFirstImage);
   }
 
-  // Standard screenshot conventions in repository:
+  // #2 PRIORITY: If project already has an explicit image or screenshot
+  if (project.image && (project.image.startsWith('http://') || project.image.startsWith('https://'))) {
+    if (!candidates.includes(project.image)) {
+      candidates.push(project.image);
+    }
+  }
+
+  if (project.screenshots && project.screenshots.length > 0) {
+    project.screenshots.forEach(sc => {
+      if (sc && (sc.startsWith('http://') || sc.startsWith('https://')) && !candidates.includes(sc)) {
+        candidates.push(sc);
+      }
+    });
+  }
+
+  // Standard screenshot conventions in repository root/folders:
   candidates.push(`${base}/screenshot.png`);
   candidates.push(`${base}/preview.png`);
   candidates.push(`${base}/cover.png`);
+  candidates.push(`${base}/banner.png`);
   candidates.push(`${base}/screenshots/preview.png`);
+  candidates.push(`${base}/screenshots/cover.png`);
   candidates.push(`${base}/screenshots/home.png`);
   candidates.push(`${base}/screenshots/screenshot.png`);
   candidates.push(`${base}/screenshots/1.png`);
+  candidates.push(`${base}/assets/screenshot.png`);
+  candidates.push(`${base}/assets/preview.png`);
+  candidates.push(`${base}/assets/cover.png`);
   candidates.push(`${base}/.github/preview.png`);
   candidates.push(`${base}/.github/screenshot.png`);
   candidates.push(`${base}/.github/cover.png`);
   candidates.push(`${base}/screenshot.jpg`);
   candidates.push(`${base}/preview.jpg`);
+  candidates.push(`${base}/cover.jpg`);
   candidates.push(`${base}/screenshot.webp`);
+  candidates.push(`${base}/preview.webp`);
 
   // GitHub's official dynamic OpenGraph card for the repo as clean fallback:
   candidates.push(`https://opengraph.githubassets.com/1/${GITHUB_USERNAME}/${repo}`);

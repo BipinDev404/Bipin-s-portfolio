@@ -1,31 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types/project';
-import { getProjectImageCandidates, GITHUB_USERNAME } from '../services/github';
-import { Image as ImageIcon, Github, Code2, ExternalLink, Star } from 'lucide-react';
+import { 
+  getProjectImageCandidates, 
+  getRepositoryReadme, 
+  extractFirstImageFromReadme,
+  GITHUB_USERNAME 
+} from '../services/github';
+import { Image as ImageIcon, Github, Code2, Star } from 'lucide-react';
 
 interface ProjectImageShowcaseProps {
   project: Project;
   variant?: 'card' | 'hero' | 'detail';
   className?: string;
-  onOpenGuide?: () => void;
 }
 
 export const ProjectImageShowcase: React.FC<ProjectImageShowcaseProps> = ({
   project,
   variant = 'card',
   className = '',
-  onOpenGuide
 }) => {
-  const candidates = getProjectImageCandidates(project);
+  const [readmeImage, setReadmeImage] = useState<string | null>(null);
   const [candidateIndex, setCandidateIndex] = useState<number>(0);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [allFailed, setAllFailed] = useState<boolean>(false);
+
+  // 1. Fetch README.md to extract the FIRST image link
+  useEffect(() => {
+    let isMounted = true;
+    const repoName = project.repoName || project.id;
+    const branch = project.defaultBranch || 'main';
+
+    async function checkReadmeForCover() {
+      try {
+        const readmeContent = await getRepositoryReadme(repoName, branch);
+        if (isMounted && readmeContent) {
+          const firstImg = extractFirstImageFromReadme(readmeContent, repoName, branch);
+          if (firstImg) {
+            setReadmeImage(firstImg);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not extract README cover image for', repoName, e);
+      }
+    }
+
+    checkReadmeForCover();
+    return () => { isMounted = false; };
+  }, [project.id, project.repoName, project.defaultBranch]);
+
+  // 2. Generate candidate list with README first image prioritized at index 0
+  const candidates = getProjectImageCandidates(project, readmeImage);
 
   useEffect(() => {
     setCandidateIndex(0);
     setImageLoaded(false);
     setAllFailed(false);
-  }, [project.id, project.updatedAt]);
+  }, [project.id, project.updatedAt, readmeImage]);
 
   const handleImageError = () => {
     if (candidateIndex < candidates.length - 1) {
@@ -46,7 +76,7 @@ export const ProjectImageShowcase: React.FC<ProjectImageShowcaseProps> = ({
           <div className="absolute inset-0 bg-slate-900/60 dark:bg-neutral-900/60 flex items-center justify-center animate-pulse">
             <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
               <ImageIcon className="w-4 h-4 animate-spin text-neutral-500" />
-              <span>Loading repository image...</span>
+              <span>Loading cover...</span>
             </div>
           </div>
         )}
@@ -62,12 +92,16 @@ export const ProjectImageShowcase: React.FC<ProjectImageShowcaseProps> = ({
           loading="lazy"
         />
 
-        {/* Real GitHub Image Indicator Pill */}
+        {/* GitHub Asset / README Cover Badge */}
         {imageLoaded && (
           <div className="absolute top-2 left-2 pointer-events-none">
             <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-black/75 text-neutral-200 border border-white/10 backdrop-blur-sm shadow-sm flex items-center gap-1">
               <Github className="w-2.5 h-2.5 text-neutral-400" />
-              {currentSrc.includes('opengraph') ? 'GitHub Preview' : 'Repository Asset'}
+              {currentSrc === readmeImage 
+                ? 'README Cover' 
+                : currentSrc.includes('opengraph') 
+                  ? 'GitHub Preview' 
+                  : 'Project Asset'}
             </span>
           </div>
         )}
@@ -75,7 +109,7 @@ export const ProjectImageShowcase: React.FC<ProjectImageShowcaseProps> = ({
     );
   }
 
-  // Clean fallback when repository has no screenshot uploaded yet
+  // Clean fallback when repository has no screenshot or image in README yet
   return (
     <div className={`w-full h-full bg-[#0e1117] text-neutral-200 flex flex-col justify-between p-4 font-sans select-none overflow-hidden ${className}`}>
       {/* Top Bar of Fallback */}
